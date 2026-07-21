@@ -11,10 +11,10 @@
         pkgs = import nixpkgs { system = "x86_64-linux"; };
       in
       rec {
-        default = prometheus-airthing-ble-exporter;
+        default = prometheus-airthings-ble-exporter;
 
-        prometheus-airthing-ble-exporter = pkgs.buildGoModule {
-          name = "prometheus-airthing-ble-exporter";
+        prometheus-airthings-ble-exporter = pkgs.buildGoModule {
+          name = "prometheus-airthings-ble-exporter";
           version = "0.1";
 
           src = ./.;
@@ -24,14 +24,14 @@
           vendorHash = "sha256-pa6rnKR5yg7zRmyoRNTTHy4SUfHe8TNIXaEc9IFKeUI=";
 
           postInstall = ''
-            mv $out/bin/exporter $out/bin/prometheus-airthing-ble-exporter
+            mv $out/bin/exporter $out/bin/prometheus-airthings-ble-exporter
           '';
         };
       };
 
     overlays.default = (
       final: prev: {
-        inherit (self.packages.${final.system}) prometheus-airthing-ble-exporter;
+        inherit (self.packages.${final.system}) prometheus-airthings-ble-exporter;
       }
     );
 

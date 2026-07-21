@@ -1,4 +1,4 @@
-module github.com/numkem/prometheus-airthing-ble-exporter
+module github.com/numkem/prometheus-airthings-ble-exporter
 
 go 1.26.4
 

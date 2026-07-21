@@ -1,3 +1,3 @@
-# prometheus-airthing-ble-exporter
+# prometheus-airthings-ble-exporter
 
-Prometheus Airthing Wave BLE based exporter
+Prometheus Airthings Wave BLE based exporter

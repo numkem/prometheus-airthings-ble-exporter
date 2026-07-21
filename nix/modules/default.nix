@@ -7,15 +7,15 @@
 
 with lib;
 let
-  cfg = config.services.prometheus-airthing-ble-exporter;
+  cfg = config.services.prometheus-airthings-ble-exporter;
 in
 {
-  options.services.prometheus-airthing-ble-exporter = {
-    enable = mkEnableOption "Enable the prometheus Airthing BLE exporter";
+  options.services.prometheus-airthings-ble-exporter = {
+    enable = mkEnableOption "Enable the prometheus Airthings BLE exporter";
 
     package = mkOption {
       type = types.package;
-      default = pkgs.prometheus-airthing-ble-exporter;
+      default = pkgs.prometheus-airthings-ble-exporter;
       description = mdDoc ''
         Package to use for the systemd service.
       '';
@@ -51,22 +51,22 @@ in
       type = types.ints.unsigned;
       default = 0;
       description = mdDoc ''
-        The serial number of the Airthing Wave to probe for data
+        The serial number of the Airthings Wave to probe for data
       '';
     };
   };
 
   config = mkIf cfg.enable {
-    systemd.services.prometheus-airthing-ble-exporter = {
+    systemd.services.prometheus-airthings-ble-exporter = {
       after = [ "network.target" ];
       requires = [ "bluetooth.service" ];
       wantedBy = [ "default.target" ];
 
-      description = "Airthing Wave BLE exporter for prometheus";
+      description = "Airthings Wave BLE exporter for prometheus";
       restartIfChanged = true;
 
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/prometheus-airthing-ble-exporter -serial ${toString cfg.waveSerialNumber} -address ${cfg.listenAddress}:${toString cfg.port} -collection ${cfg.collectionDuration}";
+        ExecStart = "${cfg.package}/bin/prometheus-airthings-ble-exporter -serial ${toString cfg.waveSerialNumber} -address ${cfg.listenAddress}:${toString cfg.port} -collection ${cfg.collectionDuration}";
 
         ProtectHostname = true;
         PrivateTmp = !config.boot.isContainer;
