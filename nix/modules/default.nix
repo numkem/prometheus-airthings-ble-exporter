@@ -7,10 +7,10 @@
 
 with lib;
 let
-  cfg = config.services.prometheus.exporters.airthing-ble;
+  cfg = config.services.prometheus-airthing-ble-exporter;
 in
 {
-  options.services.prometheus.exporters.airthing-ble = {
+  options.services.prometheus-airthing-ble-exporter = {
     enable = mkEnableOption "Enable the prometheus Airthing BLE exporter";
 
     package = mkOption {
