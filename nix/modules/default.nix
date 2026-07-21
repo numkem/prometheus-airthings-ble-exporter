@@ -54,7 +54,6 @@ in
         The serial number of the Airthing Wave to probe for data
       '';
     };
-
   };
 
   config = mkIf cfg.enable {
