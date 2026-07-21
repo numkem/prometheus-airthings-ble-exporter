@@ -7,10 +7,10 @@
 
 with lib;
 let
-  cfg = config.services.prometheus-airthing-ble-exporter;
+  cfg = config.services.prometheus.exporters.airthing-ble;
 in
 {
-  options.services.prometheus-airthing-ble-exporter = {
+  options.services.prometheus.exporters.airthing-ble = {
     enable = mkEnableOption "Enable the prometheus Airthing BLE exporter";
 
     package = mkOption {
@@ -18,6 +18,32 @@ in
       default = pkgs.prometheus-airthing-ble-exporter;
       description = mdDoc ''
         Package to use for the systemd service.
+      '';
+    };
+
+    collectionDuration = mkOption {
+      type = types.str;
+      default = "30s";
+      description = mdDoc ''
+        Go duration for how often to prope the Wave for it's data
+      '';
+    };
+
+    listenAddress = mkOption {
+      type = types.str;
+      default = "0.0.0.0";
+      description = mdDoc ''
+        Listening address for the exporter.
+
+        The IP can be ommited for 0.0.0.0
+      '';
+    };
+
+    port = mkOption {
+      type = types.ints.u16;
+      default = 9456;
+      description = mdDoc ''
+        Which port the exporter will listen on.
       '';
     };
 
@@ -29,23 +55,6 @@ in
       '';
     };
 
-    listenAddress = mkOption {
-      type = types.str;
-      default = ":9456";
-      description = mdDoc ''
-        Listening address for the exporter. In the <ip>:<port> format.
-
-        The IP can be ommited for 0.0.0.0
-      '';
-    };
-
-    collectionDuration = mkOption {
-      type = types.str;
-      default = "30s";
-      description = mdDoc ''
-        Go duration for how often to prope the Wave for it's data
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
@@ -53,7 +62,7 @@ in
       description = "Airthing Wave BLE exporter for prometheus";
       restartIfChanged = true;
 
-      serviceConfig.ExecStart = "${cfg.package}/bin/prometheus-airthing-ble-exporter -serial ${cfg.waveSerialNumber} -address ${cfg.listenAddress} -collection ${cfg.collectionDuration}";
+      serviceConfig.ExecStart = "${cfg.package}/bin/prometheus-airthing-ble-exporter -serial ${cfg.waveSerialNumber} -address ${cfg.listenAddress}:${cfg.port} -collection ${cfg.collectionDuration}";
 
       ProtectHostname = true;
       PrivateTmp = !config.boot.isContainer;
