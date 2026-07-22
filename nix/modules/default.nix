@@ -67,10 +67,19 @@ in
 
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/prometheus-airthings-ble-exporter -serial ${toString cfg.waveSerialNumber} -address ${cfg.listenAddress}:${toString cfg.port} -collection ${cfg.collectionDuration}";
+        Restart = "always";
 
-        ProtectHostname = true;
+        LockPersonality = true;
         PrivateTmp = !config.boot.isContainer;
         PrivateUsers = true;
+        ProtectControlGroups = !config.boot.isContainer;
+        ProtectHostname = true;
+        ProtectKernelLogs = !config.boot.isContainer;
+        ProtectKernelModules = !config.boot.isContainer;
+        ProtectKernelTunables = !config.boot.isContainer;
+        RestrictNamespaces = !config.boot.isContainer;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
       };
     };
   };
