@@ -82,13 +82,13 @@ func NewExporter(waveSerialNumber uint64, reg *prometheus.Registry) (*Exporter, 
 	return e, nil
 }
 
-func (e *Exporter) Collect() {
-	log.Debugf("Collect :: currentReadValues: %+v\n", currentReadValues)
+func (e *Exporter) Collect(values *CurrentValues) {
+	log.Debugf("Collect :: currentReadValues: %+v\n", values)
 
-	e.Metrics.Timestamp.Add(float64(currentReadValues.Timestamp.Unix()))
+	e.Metrics.Timestamp.Add(float64(values.Timestamp.Unix()))
 
-	e.Metrics.Humidity.Set(currentReadValues.Humidity)
-	e.Metrics.Temperature.Set(currentReadValues.Temperature)
-	e.Metrics.RadonSTA.Set(float64(currentReadValues.RadonSTA))
-	e.Metrics.RadonLTA.Set(float64(currentReadValues.RadonLTA))
+	e.Metrics.Humidity.Set(values.Humidity)
+	e.Metrics.Temperature.Set(values.Temperature)
+	e.Metrics.RadonSTA.Set(float64(values.RadonSTA))
+	e.Metrics.RadonLTA.Set(float64(values.RadonLTA))
 }

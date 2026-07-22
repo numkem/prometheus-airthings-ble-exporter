@@ -15,8 +15,6 @@ import (
 	"tinygo.org/x/bluetooth"
 )
 
-var currentReadValues *CurrentValues
-
 func init() {
 	prometheus.MustRegister(version.NewCollector("prometheus_airthings_ble_exporter"))
 }
@@ -55,10 +53,6 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
-	// Init empty value
-	currentReadValues = &CurrentValues{}
-	var err error
-
 	reg := prometheus.NewRegistry()
 	exp, _ := NewExporter(*waveSerialNumber, reg)
 
@@ -77,32 +71,30 @@ func main() {
 	log.Infof("Listening on %s", *listenAddress)
 
 	// Force the first read
-	go func() {
-		var err error
-		currentReadValues, err = wave.Read()
-		if err != nil {
-			log.Errorf("failed to execute first read on Wave: %v", err)
-		}
-		exp.Collect()
-	}()
+	go pollWave(wave, exp)
 
 	// Listen to channels
 	for {
 		select {
 		case <-sigCh:
 			log.Info("Received signal")
-			err = wave.Disconnect()
+			err := wave.Disconnect()
 			if err != nil {
 				log.Errorf("failed to disconnect BLE adapter: %v", err)
 			}
 			os.Exit(0)
 		case <-tickCh:
-			currentReadValues, err = wave.Read()
-			if err != nil {
-				log.Errorf("failed to read values from Wave: %v", err)
-			}
-
-			exp.Collect()
+			pollWave(wave, exp)
 		}
 	}
+}
+
+func pollWave(wave *Wave, exp *Exporter) {
+	currentReadValues, err := wave.Read()
+	if err != nil {
+		log.Errorf("failed to read values from Wave: %v", err)
+		return
+	}
+
+	exp.Collect(currentReadValues)
 }
