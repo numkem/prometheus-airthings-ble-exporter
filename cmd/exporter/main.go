@@ -103,6 +103,18 @@ func pollWave(wave *Wave, exp *Exporter, retries int) {
 	if err != nil {
 		if retries > 1 {
 			log.Errorf("failed to read values from Wave, retring %d times: %v", retries, err)
+
+			// Reconnect to the Wave
+			err = wave.Disconnect()
+			if err != nil {
+				log.Errorf("failed to disconnecto from Wave: %v", err)
+			}
+
+			err = wave.Connect(retries-1)
+			if err != nil {
+				log.Errorf("failed to connect to Wave: %v", err)
+			}
+
 			pollWave(wave, exp, retries-1)
 		} else {
 			log.Errorf("failed to read values from Wave: %v", err)
