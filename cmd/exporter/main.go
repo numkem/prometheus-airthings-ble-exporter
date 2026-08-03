@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -71,8 +72,10 @@ func main() {
 
 	log.Infof("Listening on %s", *listenAddress)
 
+	pollMutex := sync.Mutex{}
+
 	// Force the first read
-	go pollWave(wave, exp, *retries)
+	go pollWave(wave, &pollMutex, exp, *retries)
 
 	// Listen to channels
 	for {
@@ -85,14 +88,17 @@ func main() {
 			}
 			os.Exit(0)
 		case <-tickCh:
-			pollWave(wave, exp, *retries)
+			pollWave(wave, &pollMutex, exp, *retries)
 		}
 	}
 }
 
-func pollWave(wave *Wave, exp *Exporter, retries int) {
+func pollWave(wave *Wave, mutex *sync.Mutex, exp *Exporter, retries int) {
 	var currentReadValues *CurrentValues
 	var err error
+
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	// Connect to wave. We can't stay connected as it doesn't work over time
 	log.Debug("Connecting to Wave...")
@@ -107,7 +113,7 @@ func pollWave(wave *Wave, exp *Exporter, retries int) {
 		if retries > 1 {
 			log.Errorf("failed to read values from Wave, retring %d times: %v", retries, err)
 
-			pollWave(wave, exp, retries-1)
+			pollWave(wave, mutex, exp, retries-1)
 		} else {
 			log.Errorf("failed to read values from Wave: %v", err)
 		}
