@@ -48,11 +48,6 @@ func main() {
 	}
 
 	wave := NewWave(adapter, uint32(*waveSerialNumber))
-	log.Info("Connecting to Wave...")
-	if err := wave.Connect(3); err != nil {
-		log.Fatalf("failed to connect to Wave device with serial %d: %v", *waveSerialNumber, err)
-	}
-	log.Info("Connected to Wave")
 
 	tickCh := time.Tick(*collectionDuration)
 
@@ -99,23 +94,18 @@ func pollWave(wave *Wave, exp *Exporter, retries int) {
 	var currentReadValues *CurrentValues
 	var err error
 
+	// Connect to wave. We can't stay connected as it doesn't work over time
+	log.Debug("Connecting to Wave...")
+	err = wave.Connect(retries - 1)
+	if err != nil {
+		log.Errorf("failed to connect to Wave: %v", err)
+	}
+	defer wave.Disconnect()
+
 	currentReadValues, err = wave.Read()
 	if err != nil {
 		if retries > 1 {
 			log.Errorf("failed to read values from Wave, retring %d times: %v", retries, err)
-
-			// Reconnect to the Wave
-			log.Debug("Reconnecting to Wave...")
-			err = wave.Disconnect()
-			if err != nil {
-				log.Errorf("failed to disconnecto from Wave: %v", err)
-			}
-
-			err = wave.Connect(retries-1)
-			if err != nil {
-				log.Errorf("failed to connect to Wave: %v", err)
-			}
-			log.Debug("Reconnected")
 
 			pollWave(wave, exp, retries-1)
 		} else {
