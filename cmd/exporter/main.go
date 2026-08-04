@@ -43,13 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	var adapter = bluetooth.DefaultAdapter
-	if err := adapter.Enable(); err != nil {
-		log.Fatalf("failed to enable BLE adapter: %v", err)
-	}
-
-	wave := NewWave(adapter, uint32(*waveSerialNumber))
-
 	tickCh := time.Tick(*collectionDuration)
 
 	sigCh := make(chan os.Signal, 1)
@@ -75,51 +68,54 @@ func main() {
 	pollMutex := sync.Mutex{}
 
 	// Force the first read
-	go pollWave(wave, &pollMutex, exp, *retries)
+	go pollWave(*waveSerialNumber, &pollMutex, exp, *retries)
 
 	// Listen to channels
 	for {
 		select {
 		case <-sigCh:
 			log.Info("Received signal")
-			err := wave.Disconnect()
-			if err != nil {
-				log.Errorf("failed to disconnect BLE adapter: %v", err)
-			}
 			os.Exit(0)
 		case <-tickCh:
-			pollWave(wave, &pollMutex, exp, *retries)
+			pollWave(*waveSerialNumber, &pollMutex, exp, *retries)
 		}
 	}
 }
 
-func pollWave(wave *Wave, mutex *sync.Mutex, exp *Exporter, retries int) {
-	var currentReadValues *CurrentValues
-	var err error
-
+func pollWave(waveSerialNumber uint64, mutex *sync.Mutex, exp *Exporter, retries int) {
+	log.Debug("starting polling")
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	// Connect to wave. We can't stay connected as it doesn't work over time
-	log.Debug("Connecting to Wave...")
-	err = wave.Connect(retries - 1)
+	var adapter = bluetooth.DefaultAdapter
+	err := adapter.Enable()
+	if err != nil {
+		log.Fatalf("failed to enable BLE adapter: %v", err)
+	}
+
+	wave := NewWave(adapter, uint32(waveSerialNumber))
+
+	log.Debug("connecting to Wave...")
+	err = wave.Connect(retries)
 	if err != nil {
 		log.Errorf("failed to connect to Wave: %v", err)
 	}
+	log.Debug("connected to Wave")
 	defer wave.Disconnect()
 
-	currentReadValues, err = wave.Read()
-	if err != nil {
-		if retries > 1 {
-			log.Errorf("failed to read values from Wave, retring %d times: %v", retries, err)
+	var currentReadValues *CurrentValues
+	for r := 1; r <= retries; r++ {
+		currentReadValues, err = wave.Read()
+		if err != nil {
+			log.Errorf("failed to read values from Wave, retring %d times: %v", retries-r, err)
 
-			pollWave(wave, mutex, exp, retries-1)
+			// Wait a second to let the bluetooth device settle
+			time.Sleep(1 * time.Second)
 		} else {
-			log.Errorf("failed to read values from Wave: %v", err)
+			break
 		}
-
-		return
 	}
 
 	exp.Collect(currentReadValues)
+	log.Debug("done polling")
 }
