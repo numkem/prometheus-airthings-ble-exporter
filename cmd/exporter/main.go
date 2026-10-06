@@ -116,6 +116,8 @@ func pollWave(waveSerialNumber uint64, mutex *sync.Mutex, exp *Exporter, retries
 		}
 	}
 
-	exp.Collect(currentReadValues)
+	if currentReadValues != nil {
+		exp.Collect(currentReadValues)
+	}
 	log.Debug("done polling")
 }
